@@ -42,10 +42,10 @@ var helpers = {
 			return getUserInfo(username);
 		})).then(function(info){
 			console.log('INFO', info);
-			return info.map(function(user){
+			return info.map(function(user) {
 				return user.data;
 			})
-		}).catch(function(err){
+		}).catch(function(err) {
 			console.warn('Error in getPlayersInfo', err);
 		})
 	},
@@ -58,6 +58,13 @@ var helpers = {
 			.then(calculateScores)
 			.catch(function(err) {
 				console.warn('Error in getPlayersInfo', err);
+		});
+	},
+	
+	validate: function(username) {
+		return axios.get('https://api.github.com/users/' + username + param)
+						.then(function(res) {
+			return res.data.login;
 		});
 	}
 	

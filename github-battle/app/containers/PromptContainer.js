@@ -1,6 +1,8 @@
 var React = require('react');
 var transparentBg = require('../styles').transparentBg;
 var Prompt = require('../components/Prompt');
+var githubHelpers = require('../utils/githubHelpers');
+var ErrorMessage = require('../components/ErrorMessage');
 
 var PromptContainer = React.createClass({
 	contextTypes: {
@@ -9,7 +11,9 @@ var PromptContainer = React.createClass({
 	
 	getInitialState: function() {
 		return {
-			username: ''
+			username: '',
+			hasError: false,
+			errorText: ''
 		}
 	},
 	
@@ -22,31 +26,67 @@ var PromptContainer = React.createClass({
 	handleSubmitUser: function(e) {
 		e.preventDefault();
 		var username = this.state.username;
+		if (username.length == 0) {
+			this.setState({
+				hasError: true,
+				errorText: 'Username should not be empty!!!'
+			});
+			return;
+		}
+		
 		this.setState({
-			username: ''
+			username: '',
+			hasError: false,
+			errorText: ''
 		});
 		
-		if (this.props.routeParams.playerOne) {
-			this.context.router.push({
-				pathname: '/battle',
-				query: {
-					playerOne: this.props.routeParams.playerOne,
-					playerTwo: this.state.username
+		var that = this;
+		githubHelpers.validate(username)
+			.then(function(login) {
+			console.log(login);
+			
+			if (that.props.routeParams.playerOne) {
+				if (username == that.props.routeParams.playerOne) {
+					that.setState({
+						hasError: true,
+						errorText: 'Same username as player one!!!'
+					})
+					return;
 				}
-			});
-		} else {
-			this.context.router.push('/playerTwo/' + this.state.username);
-		}
+				
+				that.context.router.push({
+					pathname: '/battle',
+					query: {
+						playerOne: that.props.routeParams.playerOne,
+						playerTwo: username
+					}
+				});
+			} else {
+				console.log(that);
+				that.context.router.push('/playerTwo/' + username);
+			}
+		}).catch(function (err) {
+			console.log(err);
+			console.log('Username validation fails');
+			that.setState({
+				hasError: true,
+				errorText: 'Fail to find username "' + username + '" !!!'
+			})
+		})
+	
 	},
 	
 	render: function() {
 		return (
-			<Prompt 
-			onSubmitUser={this.handleSubmitUser} 
-			onUpdateUser={this.handleUpdateUser}
-			header={this.props.route.header}
-			username={this.state.username}
-			/>
+			<div>
+				<Prompt 
+				onSubmitUser={this.handleSubmitUser} 
+				onUpdateUser={this.handleUpdateUser}
+				header={this.props.route.header}
+				username={this.state.username}
+				/>
+				{this.state.hasError && <ErrorMessage text={this.state.errorText} color='red' />}
+			</div>
 		)
 		
 	}
